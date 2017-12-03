@@ -1,41 +1,15 @@
-#-------------------------------------------------------------------------------
-# Name:         ACTrainer
-#
-# Author:       vsantiago113
-# Email:        vsantiago113@vs113dev.com
-# Youtube:      youtube.com/user/vsantiago113
-#
-# Created:      24/03/2013
-# Last Updated: 1/12/2015
-# Copyright:    (c) vsantiago113 2013-2015
-# Licence:      GNU General Public License version 2 (GPLv2)
-#-------------------------------------------------------------------------------
-
-# Make sure you download AssaultCube_v1.1.0.4. If you download a newer version
-# you will have to update the memory addresses.
-
-# Python 2.x
-try:
-    import Tkinter as tk
-    import tkFont as font
-    import tkMessageBox as messagebox
-    import ttk
-except ImportError:
-    # Python 3.x
-    import tkinter as tk
-    from tkinter import font, ttk, messagebox
-
+import tkinter as tk
+from tkinter import font
+from tkinter import ttk
+from tkinter import messagebox
 from PIL import Image, ImageTk
-from ReadWriteMemory.ReadWriteMemory import rwm
+from ReadWriteMemory import rwm
 
 import sys
 
 class AC_Trainer:
 
     def __init__(self, parent):
-
-        def About():
-            messagebox.showinfo('About', 'By vsantiago113')
 
         def subGranade():
             try:
@@ -71,7 +45,7 @@ class AC_Trainer:
                     return self.InfAmmoValue
 
         def Timer():
-            ProcID = rwm.GetProcessIdByName('ac_client')
+            ProcID = rwm.GetProcessIdByName('ac_client.exe')
             self.hProcess = rwm.OpenProcess(ProcID)
             
             if self.hProcess == None:
@@ -133,9 +107,6 @@ class AC_Trainer:
 
         self.infAmmoButton = ttk.Button(parent, text='Infinite Ammo: OFF', command=infAmmoFunc)
         self.infAmmoButton.place(w=115, h=35, x=12, y=268)
-
-        self.AboutButton = ttk.Button(parent, text='About', command=About)
-        self.AboutButton.place(w=50, h=38, x=239, y=9)
 
         self.entryGranade = ttk.Entry(parent)
         self.entryGranade.place(w=100, h=20, x=182, y=217)
