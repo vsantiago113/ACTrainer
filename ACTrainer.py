@@ -1,11 +1,22 @@
-import tkinter as tk
-from tkinter import font
-from tkinter import ttk
-from tkinter import messagebox
+import sys
 from PIL import Image, ImageTk
 from ReadWriteMemory import rwm
 
+if sys.version_info.major == 2:
+    import Tkinter as tk
+    import ttk
+    import tkFont as font
+    import tkMessageBox as messagebox
+elif sys.version_info.major == 3:
+    import tkinter as tk
+    from tkinter import ttk, font
+    from tkinter import messagebox
+else:
+    print('This version of Python is not supported!')
+    sys.exit(1)
+
 import sys
+
 
 class AC_Trainer:
 
