@@ -1,134 +1,110 @@
-import sys
 from PIL import Image, ImageTk
-from ReadWriteMemory import rwm
-
-if sys.version_info.major == 2:
-    import Tkinter as tk
-    import ttk
-    import tkFont as font
-    import tkMessageBox as messagebox
-elif sys.version_info.major == 3:
-    import tkinter as tk
-    from tkinter import ttk, font
-    from tkinter import messagebox
-else:
-    print('This version of Python is not supported!')
-    sys.exit(1)
-
+from ReadWriteMemory import ReadWriteMemory
+import tkinter as tk
+from tkinter import ttk
 import sys
 
 
-class AC_Trainer:
+class ACTrainer:
 
     def __init__(self, parent):
+        rwm = ReadWriteMemory()
+        self.process = rwm.get_process_by_name('ac_client.exe')
+        self.process.open()
+        self.health_pointer = None
+        self.ammo_pointer = None
+        self.grenade_pointer = None
+        self.health = 0
+        self.ammo = 0
+        self.grenade = 0
 
-        def subGranade():
+        def grenade_func():
+            """Add more grenades in the game and update the value on the GUI"""
             try:
-                self.enGranade = self.entryGranade.get()
-                if self.enGranade.strip() == '':
+                self.en_grenade = self.entry_grenade.get()
+                if self.en_grenade.strip() == '':
                     pass
                 else:
-                    rwm.WriteProcessMemory(self.hProcess, self.GranadeVar, int(self.enGranade))
-                    self.entryGranade.delete(0, tk.END)
+                    self.process.write(self.grenade_pointer, int(self.en_grenade))
+                    self.entry_grenade.delete(0, tk.END)
             except AttributeError:
-                self.entryGranade.delete(0, tk.END)
+                self.entry_grenade.delete(0, tk.END)
 
-        def infHealthFunc():
-            if self.hProcess == None:
-                pass
+        def health_func():
+            """
+            A toggle function to turn ON or OFF infinite health.
+            """
+            if self.infinite_health_button['text'].endswith('OFF'):
+                self.infinite_health_button.config(text='Infinite Health: ON')
             else:
-                if self.InfHealthValue == True:
-                    self.InfHealthValue = False
-                    return self.InfHealthValue
-                else:
-                    self.InfHealthValue = True
-                    return self.InfHealthValue
+                self.infinite_health_button.config(text='Infinite Health: OFF')
 
-        def infAmmoFunc():
-            if self.hProcess == None:
-                pass
+        def ammo_func():
+            """
+            A toggle function to turn ON or OFF infinite ammo.
+            """
+            if self.infinite_ammo_button['text'].endswith('OFF'):
+                self.infinite_ammo_button.config(text='Infinite Ammo: ON')
             else:
-                if self.InfAmmoValue == True:
-                    self.InfAmmoValue = False
-                    return self.InfAmmoValue
-                else:
-                    self.InfAmmoValue = True
-                    return self.InfAmmoValue
+                self.infinite_ammo_button.config(text='Infinite Ammo: OFF')
 
-        def Timer():
-            ProcID = rwm.GetProcessIdByName('ac_client.exe')
-            self.hProcess = rwm.OpenProcess(ProcID)
-            
-            if self.hProcess == None:
-                self.pLabel.config(text='Game Offline')
-                self.HealthLabel.config(text='0x0')
-                self.AmmoLabel.config(text='0x0')
-                self.GranadeLabel.config(text='0x0')
-            else:
-                #Address Variale
-                self.HealthVar = rwm.getPointer(self.hProcess, 0x004e4dbc, offsets=[0xf4])
-                self.MainAmmoVar = rwm.getPointer(self.hProcess, 0x004df73c, offsets=[0x378,0x14,0x0])
-                self.GranadeVar = rwm.getPointer(self.hProcess, 0x004df73c, offsets=[0x35c,0x14,0x0])
-                
-                self.pLabel.config(text='Game Online')
-                
-                self.Health = rwm.ReadProcessMemory(self.hProcess, self.HealthVar)
-                self.HealthLabel.config(text=self.Health)
+        def timer():
+            """This is the TIMER function that runs every 100 milliseconds and update the health, ammo and grenade."""
+            # START POINTERS FOR HEALTH, AMMO AND GRENADE
+            self.health_pointer = self.process.get_pointer(0x004e4dbc, offsets=[0xf4])
+            self.ammo_pointer = self.process.get_pointer(0x004df73c, offsets=[0x378, 0x14, 0x0])
+            self.grenade_pointer = self.process.get_pointer(0x004df73c, offsets=[0x35c, 0x14, 0x0])
+            # END POINTERS
 
-                self.MainAmmo = rwm.ReadProcessMemory(self.hProcess, self.MainAmmoVar)
-                self.AmmoLabel.config(text=self.MainAmmo)
+            self.p_label.config(text='Game Online')
 
-                self.Granade = rwm.ReadProcessMemory(self.hProcess, self.GranadeVar)
-                self.GranadeLabel.config(text=self.Granade)
+            self.health = self.process.read(self.health_pointer)
+            self.health_label.config(text=self.health)
 
-                if self.InfHealthValue == True:
-                    rwm.WriteProcessMemory(self.hProcess, self.HealthVar, 100)
-                    self.infHealthButton.config(text='Infinite Health: On')
-                else:
-                    self.infHealthButton.config(text='Infinite Health: OFF')
+            self.ammo = self.process.read(self.ammo_pointer)
+            self.ammo_label.config(text=self.ammo)
 
-                if self.InfAmmoValue == True:
-                    rwm.WriteProcessMemory(self.hProcess, self.MainAmmoVar, 20)
-                    self.infAmmoButton.config(text='Infinite Ammo: On')
-                else:
-                    self.infAmmoButton.config(text='Infinite Ammo: OFF')
-            parent.after(100, Timer)
+            self.grenade = self.process.read(self.grenade_pointer)
+            self.grenade_label.config(text=self.grenade)
 
-        self.InfHealthValue = False
-        self.InfAmmoValue = False
+            if self.infinite_health_button['text'].endswith('ON'):
+                self.process.write(self.health_pointer, 100)
 
-        self.pLabel = tk.Label(parent, text='Game Offline', font=('Microsoft Sans Serif', 16),
-                            bg='black', fg='white')
-        self.pLabel.place(x=12, y=9)
+            if self.infinite_ammo_button['text'].endswith('ON'):
+                self.process.write(self.ammo_pointer, 20)
 
-        self.HealthLabel = tk.Label(parent, text='0x0', font=('Microsoft Sans Serif', 24),
-                            bg='black', fg='white')
-        self.HealthLabel.place(x=53, y=128)
+            parent.after(100, timer)
 
-        self.AmmoLabel = tk.Label(parent, text='0x0', font=('Microsoft Sans Serif', 24),
-                            bg='black', fg='white')
-        self.AmmoLabel.place(x=53, y=219)
+        self.p_label = tk.Label(parent, text='Game Offline', font=('Microsoft Sans Serif', 16), bg='black', fg='white')
+        self.p_label.place(x=12, y=9)
 
-        self.GranadeLabel = tk.Label(parent, text='0x0', font=('Microsoft Sans Serif', 24),
-                            bg='black', fg='white')
-        self.GranadeLabel.place(x=225, y=168)
+        self.health_label = tk.Label(parent, text='0x0', font=('Microsoft Sans Serif', 24), bg='black', fg='white')
+        self.health_label.place(x=53, y=128)
 
-        self.infHealthButton = ttk.Button(parent, text='Infinite Health: OFF', command=infHealthFunc)
-        self.infHealthButton.place(w=115, h=35, x=12, y=175)
+        self.ammo_label = tk.Label(parent, text='0x0', font=('Microsoft Sans Serif', 24), bg='black', fg='white')
+        self.ammo_label.place(x=53, y=219)
 
-        self.infAmmoButton = ttk.Button(parent, text='Infinite Ammo: OFF', command=infAmmoFunc)
-        self.infAmmoButton.place(w=115, h=35, x=12, y=268)
+        self.grenade_label = tk.Label(parent, text='0x0', font=('Microsoft Sans Serif', 24), bg='black', fg='white')
+        self.grenade_label.place(x=225, y=168)
 
-        self.entryGranade = ttk.Entry(parent)
-        self.entryGranade.place(w=100, h=20, x=182, y=217)
+        self.infinite_health_button = ttk.Button(parent, text='Infinite Health: OFF', command=health_func)
+        self.infinite_health_button.place(w=115, h=35, x=12, y=175)
 
-        self.GranadeButton = ttk.Button(parent, text='Insert Granades', command=subGranade)
-        self.GranadeButton.place(w=100, h=60, x=182, y=245)
-        Timer()
+        self.infinite_ammo_button = ttk.Button(parent, text='Infinite Ammo: OFF', command=ammo_func)
+        self.infinite_ammo_button.place(w=115, h=35, x=12, y=268)
+
+        self.entry_grenade = ttk.Entry(parent)
+        self.entry_grenade.place(w=100, h=20, x=182, y=217)
+
+        self.grenade_button = ttk.Button(parent, text='Insert Grenades', command=grenade_func)
+        self.grenade_button.place(w=100, h=60, x=182, y=245)
+        timer()
+
 
 def main():
     root = tk.Tk()
-    w = 300; h =315
+    w = 300
+    h = 315
     sw = root.winfo_screenwidth()
     sh = root.winfo_screenheight()
     x = (sw - w) / 2
@@ -143,10 +119,11 @@ def main():
     label = tk.Label(root, image=photo, bg='#000')
     label.image = photo
     label.pack()
-    MainWindow = AC_Trainer(root)
+    ACTrainer(root)
 
     root.mainloop()
     sys.exit(1)
+
 
 if __name__ == '__main__':
     main()
